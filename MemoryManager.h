@@ -26,10 +26,7 @@ public:
 
 public:
     segment_t* begin() const { return __head; }
-    segment_t* end() const { return begin() + __size; }
-
-protected:
-    void* NewAllocationAddress(std::size_t size);
+    segment_t* end() const { return begin() + __segments; }
 
 protected:
     segment_t* insert_segment(segment_t* position, std::size_t size);
@@ -39,7 +36,7 @@ protected:
 
 protected:
     segment_t* __head = nullptr;
-    std::size_t __size = 0;
+    std::size_t __segments = 0;
 };
 
 class memory_manager_t
@@ -56,7 +53,7 @@ public:
 
 protected:
     segment_table_t* __memory = nullptr;
-    std::size_t __size = 0;
+    std::size_t __bytes = 0;
 };
 
 #endif // TMEMORY_MANAGER_H

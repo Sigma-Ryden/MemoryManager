@@ -2,7 +2,7 @@
 
 #include "MemoryManager.h"
 
-constexpr auto memory_size = 10;
+constexpr auto memory_size = 1000;
 memory_manager_t memory( new char[memory_size], memory_size );
 
 void ShowMemoryStat(const char* text)
@@ -17,7 +17,7 @@ void ShowMemoryStat(const char* text)
                     << "\nsize:\t" << segment.size
                     << "\nis_used:\t" << segment.is_used
                     << "\ndata:\t";
-        for(auto i = 0; i<segment.size; ++i) std::cout << ((char*)segment.address)[i];
+        //for(auto i = 0; i<segment.size; ++i) std::cout << ((char*)segment.address)[i];
         std::cout << "\n\n";
     }
 
@@ -31,10 +31,10 @@ int main()
 {
     DO(auto segment01 = memory.add_segment(1); new (segment01->address) char(1));
     DO(auto segment02 = memory.add_segment(2); new (segment02->address) short(2));
-    DO(memory.remove_segment(segment01));
+    DO(memory.remove_segment(segment01->address));
     DO(auto segment04 = memory.add_segment(4); new (segment04->address) int(4));
     DO(auto segment11 = memory.add_segment(1); new (segment11->address) char(1));
-    DO(memory.remove_segment(segment02));
+    DO(memory.remove_segment(segment02->address));
 
     return 0;
 }

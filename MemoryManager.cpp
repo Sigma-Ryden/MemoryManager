@@ -13,20 +13,23 @@ segment_table_t::segment_table_t(void* head, std::size_t capacity)
     __head->size = capacity;
     __head->is_used = false;
 
-    ++__size;
+    ++__segments;
 }
 
 segment_t* segment_table_t::add_segment(std::size_t size)
 {
-    if (size > __head->size) return nullptr;
+    const auto real_size = size + sizeof(segment_t);
+
+    if (real_size > __head->size) return nullptr;
+
+    __head->size -= real_size;
 
     auto segment = new (end()) segment_t;
-
-    segment->address = NewAllocationAddress(size);
+    segment->address = reinterpret_cast<char*>(__head) + __head->size;
     segment->size = size;
     segment->is_used = true;
 
-    ++__size;
+    ++__segments;
 
     return segment;
 }
@@ -80,16 +83,8 @@ segment_t* segment_table_t::find_segment(void* address)
 // success
 segment_t* segment_table_t::find_segment(std::size_t size)
 {
-    for (auto it = begin(); it != end(); ++it) if (!it->is_used && it->size <= size) return it;
+    for (auto it = begin(); it != end(); ++it) if (!it->is_used && size <= it->size) return it;
     return nullptr;
-}
-
-// rewrite!
-// extend dynamic segment after merging
-void* segment_table_t::NewAllocationAddress(std::size_t size)
-{
-    __head->size -= size + sizeof(segment_t);
-    return reinterpret_cast<char*>(__head) + __head->size;
 }
 
 // a [b] c d -> a [b] c d [x] -> a [b] c [x] d -> a [b] [x] c d
@@ -118,7 +113,7 @@ bool segment_table_t::remove_segment(segment_t* position)
             {
                 std::swap(*lhs, *rhs);
             }
-            --__size;
+            --__segments;
             return true;
         }
     }
@@ -145,14 +140,14 @@ void segment_table_t::merge_segment_implementation(segment_t* extendable, segmen
     remove_segment(segment);
 }
 
-
+// ensure, that: size >= sizeof(segment_table_t)
 memory_manager_t::memory_manager_t(void* memory, std::size_t size)
 {
     __memory = static_cast<segment_table_t*>(memory);
-    __size = size;
+    __bytes = size;
 
     auto head = reinterpret_cast<char*>(__memory) + sizeof(segment_table_t);
-    auto capacity = __size - sizeof(segment_table_t);
+    auto capacity = __bytes - sizeof(segment_table_t);
 
     new (__memory) segment_table_t(head, capacity);
 }
@@ -162,7 +157,10 @@ segment_t* memory_manager_t::add_segment(std::size_t size)
     auto segment = __memory->find_segment(size);
     if (segment)
     {
-        segment = __memory->split_segment(segment, size);
+        if (segment->size > size + sizeof(segment_t))
+        {
+            segment = __memory->split_segment(segment, size);
+        }
         segment->is_used = true;
     }
     return segment;
