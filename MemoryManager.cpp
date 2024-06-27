@@ -88,10 +88,8 @@ segment_t* segment_table_t::find_segment(std::size_t size)
 // extend dynamic segment after merging
 void* segment_table_t::NewAllocationAddress(std::size_t size)
 {
-    const auto diff = __head->size - size;
-
-    __head->size = diff;
-    return reinterpret_cast<char*>(__head) + diff;
+    __head->size -= size + sizeof(segment_t);
+    return reinterpret_cast<char*>(__head) + __head->size;
 }
 
 // a [b] c d -> a [b] c d [x] -> a [b] c [x] d -> a [b] [x] c d
