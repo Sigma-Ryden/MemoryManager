@@ -5,54 +5,33 @@
 
 struct segment_t
 {
-    void* address = nullptr;
-    std::size_t size  : sizeof(std::size_t) * sizeof(nullptr) - 1;
+public:
+    std::size_t size  : sizeof(std::size_t) * 8 - 1;
     std::size_t is_used : 1;
-};
-
-class segment_table_t
-{
-public:
-    segment_table_t(void* root, std::size_t capacity);
 
 public:
-    segment_t* add_segment(std::size_t size);
-    bool merge_segment(segment_t* segment);
-    segment_t* split_segment(segment_t* segment, std::size_t size);
-
-public:
-    segment_t* find_segment(void* address);
-    segment_t* find_segment(std::size_t size);
-
-public:
-    segment_t* begin() const { return __head; }
-    segment_t* end() const { return begin() + __segments; }
-
-protected:
-    segment_t* insert_segment(segment_t* position, std::size_t size);
-    bool remove_segment(segment_t* position);
-    void neighbour_segments(segment_t* segment, segment_t*& lhs, segment_t*& rhs);
-    void merge_segment_implementation(segment_t* extendable, segment_t* segment);
-
-protected:
-    segment_t* __head = nullptr;
-    std::size_t __segments = 0;
+    segment_t* next() const;
 };
 
 class memory_manager_t
 {
 public:
-    memory_manager_t(void* memory, std::size_t size);
+    memory_manager_t(char* memory, std::size_t bytes);
 
 public:
-    segment_t* add_segment(std::size_t size);
+    segment_t* begin() const;
+    segment_t* end() const;
+
+public:
+    void* add_segment(std::size_t size);
     bool remove_segment(void* address);
 
-public:
-    segment_table_t* segment_table();
+private:
+    void find_segment(segment_t*& lhs, segment_t*& segment, segment_t*& rhs, std::size_t size);
+    void find_segment(segment_t*& lhs, segment_t*& segment, segment_t*& rhs, void* address);
 
-protected:
-    segment_table_t* __memory = nullptr;
+private:
+    char* __memory = nullptr;
     std::size_t __bytes = 0;
 };
 
