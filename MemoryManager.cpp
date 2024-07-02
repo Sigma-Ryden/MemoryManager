@@ -63,33 +63,29 @@ void* memory_manager_t::add_segment(std::size_t size)
 
 bool memory_manager_t::remove_segment(void* address)
 {
-    bool is_removed = false;
-
     segment_t* lhs = nullptr;
     segment_t* segment = nullptr;
     segment_t* rhs = nullptr;
 
     find_segment(lhs, segment, rhs, address);
 
-    if (segment == nullptr) return is_removed;
-    else segment->is_used = false;
+    if (segment == nullptr) return false;
 
+    segment->is_used = false;
     if (rhs != nullptr && !rhs->is_used)
     {
         segment->size += sizeof(segment_t) + rhs->size;
         segment->is_used = false;
         rhs->~segment_t();
-        is_removed = true;
     }
     if(lhs != nullptr && !lhs->is_used)
     {
         lhs->size += sizeof(segment_t) + segment->size;
         lhs->is_used = false;
         segment->~segment_t();
-        is_removed = true;
     }
 
-    return is_removed;
+    return true;
 }
 
 void memory_manager_t::find_segment(segment_t*& lhs, segment_t*& segment, segment_t*& rhs, std::size_t size)
