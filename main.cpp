@@ -26,13 +26,28 @@ void stats(char const* text)
 
 int main()
 {
-    DO(((void)memory, 0));
-    DO(auto segment01 = memory.add_segment(1));
-    DO(auto segment04 = memory.add_segment(4));
-    DO(auto segment02 = memory.add_segment(2));
-    DO(memory.remove_segment(segment01));
-    DO(memory.remove_segment(segment02));
-    DO(memory.remove_segment(segment04));
+    if (false)
+    {
+        DO(((void)memory, 0));
+        DO(auto segment01 = memory.add_segment(1));
+        DO(auto segment04 = memory.add_segment(4));
+        DO(auto segment02 = memory.add_segment(2));
+        DO(memory.remove_segment(segment01));
+        DO(memory.remove_segment(segment02));
+        DO(memory.remove_segment(segment04));
+    }
+    else
+    {
+        DO(((void)memory, 0));
+        DO(auto segment01 = memory.add_segment(1));
+        DO(auto segment02 = memory.add_segment(2));
+        DO(memory.remove_segment(segment01));
+        DO(auto segment04 = memory.add_segment(4));
+        DO(auto segment11 = memory.add_segment(1));
+        DO(memory.remove_segment(segment02));
+        DO(memory.remove_segment(segment11));
+        DO(memory.remove_segment(segment04));
+    }
 
     return 0;
 }
