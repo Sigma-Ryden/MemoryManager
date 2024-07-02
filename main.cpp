@@ -26,7 +26,7 @@ void stats(char const* text)
 
 int main()
 {
-    if (false)
+    //if (false)
     {
         DO(((void)memory, 0));
         DO(auto segment01 = memory.add_segment(1));
@@ -36,7 +36,7 @@ int main()
         DO(memory.remove_segment(segment02));
         DO(memory.remove_segment(segment04));
     }
-    else
+    //else
     {
         DO(((void)memory, 0));
         DO(auto segment01 = memory.add_segment(1));

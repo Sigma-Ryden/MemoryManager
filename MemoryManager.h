@@ -27,10 +27,6 @@ public:
     bool remove_segment(void* address);
 
 private:
-    void find_segment(segment_t*& lhs, segment_t*& segment, segment_t*& rhs, std::size_t size);
-    void find_segment(segment_t*& lhs, segment_t*& segment, segment_t*& rhs, void* address);
-
-private:
     char* __memory = nullptr;
     std::size_t __bytes = 0;
 };

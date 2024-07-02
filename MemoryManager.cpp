@@ -1,5 +1,6 @@
 #include "MemoryManager.h"
 
+#include <cassert> // assert
 #include <new> // placement new
 
 segment_t* segment_t::next() const
@@ -13,6 +14,8 @@ segment_t* segment_t::next() const
 memory_manager_t::memory_manager_t(char* memory, std::size_t bytes)
     : __memory(memory), __bytes(bytes)
 {
+    assert(__bytes > sizeof(segment_t));
+
     auto segment = new (__memory) segment_t;
     segment->size = __bytes - sizeof(segment_t);
     segment->is_used = false;
@@ -28,13 +31,22 @@ segment_t* memory_manager_t::end() const
     return reinterpret_cast<segment_t*>(__memory + __bytes);
 }
 
+static void find_free_segment(segment_t*& segment, const memory_manager_t* memory, std::size_t size)
+{
+    for (auto it = memory->begin(); it != memory->end(); it = it->next())
+    {
+        if (not it->is_used and it->size >= size)
+        {
+            segment = it;
+            return;
+        }
+    }
+}
+
 void* memory_manager_t::add_segment(std::size_t size)
 {
-    segment_t* lhs = nullptr;
     segment_t* segment = nullptr;
-    segment_t* rhs = nullptr;
-
-    find_segment(lhs, segment, rhs, size);
+    find_free_segment(segment, this, size);
 
     if (segment == nullptr) return nullptr;
 
@@ -61,55 +73,20 @@ void* memory_manager_t::add_segment(std::size_t size)
     return segment + sizeof(segment_t);
 }
 
-bool memory_manager_t::remove_segment(void* address)
+static void extend_segment(segment_t* extendable, const segment_t* segment)
 {
-    segment_t* lhs = nullptr;
-    segment_t* segment = nullptr;
-    segment_t* rhs = nullptr;
+    assert(extendable->next() == segment);
 
-    find_segment(lhs, segment, rhs, address);
-
-    if (segment == nullptr) return false;
-
-    segment->is_used = false;
-    if (rhs != nullptr && !rhs->is_used)
-    {
-        segment->size += sizeof(segment_t) + rhs->size;
-        segment->is_used = false;
-        rhs->~segment_t();
-    }
-    if(lhs != nullptr && !lhs->is_used)
-    {
-        lhs->size += sizeof(segment_t) + segment->size;
-        lhs->is_used = false;
-        segment->~segment_t();
-    }
-
-    return true;
+    extendable->size += sizeof(segment_t) + segment->size;
+    extendable->is_used = false;
+    segment->~segment_t();
 }
 
-void memory_manager_t::find_segment(segment_t*& lhs, segment_t*& segment, segment_t*& rhs, std::size_t size)
+static void find_segment(segment_t*& lhs, segment_t*& segment, segment_t*& rhs,
+                         const memory_manager_t* memory, const void* address)
 {
     segment_t* previous_it = nullptr;
-    for (auto it = begin(); it != end(); previous_it = it, it = it->next())
-    {
-        if (!it->is_used && it->size >= size)
-        {
-            lhs = previous_it;
-            segment = it;
-
-            it = it->next();
-            if (it < end()) rhs = it;
-
-            return;
-        }
-    }
-}
-
-void memory_manager_t::find_segment(segment_t*& lhs, segment_t*& segment, segment_t*& rhs, void* address)
-{
-    segment_t* previous_it = nullptr;
-    for (auto it = begin(); it != end(); previous_it = it, it = it->next())
+    for (auto it = memory->begin(); it != memory->end(); previous_it = it, it = it->next())
     {
         if (address == it + sizeof(segment_t))
         {
@@ -117,9 +94,27 @@ void memory_manager_t::find_segment(segment_t*& lhs, segment_t*& segment, segmen
             segment = it;
 
             it = it->next();
-            if (it < end()) rhs = it;
+            if (it < memory->end()) rhs = it;
 
             return;
         }
     }
+}
+
+bool memory_manager_t::remove_segment(void* address)
+{
+    segment_t* lhs = nullptr;
+    segment_t* segment = nullptr;
+    segment_t* rhs = nullptr;
+
+    find_segment(lhs, segment, rhs, this, address);
+
+    if (segment == nullptr) return false;
+
+    segment->is_used = false;
+
+    if (rhs != nullptr && !rhs->is_used) extend_segment(segment, rhs);
+    if (lhs != nullptr && !lhs->is_used) extend_segment(lhs, segment);
+
+    return true;
 }
