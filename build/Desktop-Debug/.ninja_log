@@ -1,4 +1,0 @@
-# ninja log v5
-1	63	1719936531091977006	CMakeFiles/SegmentAllocator.dir/MemoryManager.cpp.o	993bdbb32300887
-0	612	1719936531639976989	CMakeFiles/SegmentAllocator.dir/main.cpp.o	1a6c008fd28b798c
-614	844	1719936531871976981	SegmentAllocator	979e517c560cbb2c
