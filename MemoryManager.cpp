@@ -35,7 +35,7 @@ static void find_free_segment(segment_t*& segment, const memory_manager_t* memor
 {
     for (auto it = memory->begin(); it != memory->end(); it = it->next())
     {
-        if (not it->is_used and it->size >= size)
+        if (!it->is_used && it->size >= size)
         {
             segment = it;
             return;
