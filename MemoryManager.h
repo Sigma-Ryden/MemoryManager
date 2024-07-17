@@ -5,12 +5,11 @@
 
 struct segment_t
 {
-public:
     std::size_t size  : sizeof(std::size_t) * 8 - 1;
     std::size_t is_used : 1;
 
-public:
-    segment_t* next() const;
+    void* memory();
+    segment_t* next();
 };
 
 class memory_manager_t
@@ -19,16 +18,16 @@ public:
     memory_manager_t(char* memory, std::size_t bytes);
 
 public:
-    segment_t* begin() const;
-    segment_t* end() const;
-
-public:
     void* add_segment(std::size_t size);
     bool remove_segment(void* address);
 
+public:
+    segment_t* begin() const { return __begin; }
+    segment_t* end() const { return __end; }
+
 private:
-    char* __memory = nullptr;
-    std::size_t __bytes = 0;
+    segment_t* __begin = nullptr;
+    segment_t* __end = nullptr;
 };
 
 #endif // TMEMORY_MANAGER_H

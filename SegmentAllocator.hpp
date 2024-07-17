@@ -3,6 +3,10 @@
 
 #include <cstddef> // size_t
 
+#include "MemoryManager.h"
+
+memory_manager_t& __memory_manager(); // only for test
+
 template <typename T>
 class segment_allocator_t
 {
@@ -10,14 +14,18 @@ public:
     using value_type = T;
 
 public:
-    T* allocate(std::size_t n, const void* hint = nullptr)
+    T* allocate(std::size_t n, void const* hint = nullptr)
     {
-        return nullptr;
+        return static_cast<T*>
+        (
+            __memory_manager().add_segment(sizeof(T) * n)
+        );
     }
 
 public:
     void deallocate(T* ptr, std::size_t n)
     {
+        __memory_manager().remove_segment(ptr);
     }
 };
 
