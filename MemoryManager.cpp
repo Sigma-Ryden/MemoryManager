@@ -74,7 +74,8 @@ static void extend_segment(segment_t* extendable, segment_t const* segment)
 bool memory_manager_t::remove_segment(void* address)
 {
     auto lhs = end();
-    for (auto segment = begin(); segment != end(); lhs = segment, segment = segment->next())
+    for (auto segment = begin(); segment != end(); lhs = segment,
+                                                   segment = segment->next())
     {
         if (address != segment->memory())
         {
