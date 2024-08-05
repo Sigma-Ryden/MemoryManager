@@ -10,6 +10,8 @@ struct segment_t
 
     void* memory();
     segment_t* next();
+
+    static segment_t* segment(void* memory);
 };
 
 class memory_manager_t
@@ -19,15 +21,16 @@ public:
 
 public:
     void* add_segment(std::size_t size);
+    bool extend_segment(void* address, std::size_t size);
     bool remove_segment(void* address);
 
 public:
-    segment_t* begin() const { return __begin; }
-    segment_t* end() const { return __end; }
+    segment_t* begin() const { return xxbegin; }
+    segment_t* end() const { return xxend; }
 
 private:
-    segment_t* __begin = nullptr;
-    segment_t* __end = nullptr;
+    segment_t* xxbegin = nullptr;
+    segment_t* xxend = nullptr;
 };
 
 #endif // TMEMORY_MANAGER_H

@@ -2,14 +2,14 @@
 
 #include "MemoryManager.h"
 
-memory_manager_t& __memory_manager()
+memory_manager_t& xxmemory_manager()
 {
     constexpr auto bytes = 1000;
     static memory_manager_t manager(new char[bytes], bytes);
     return manager;
 }
 
-memory_manager_t& memory = __memory_manager();
+memory_manager_t& memory = xxmemory_manager();
 
 void stats(char const* text)
 {
@@ -60,7 +60,9 @@ void simple_test()
         DO(auto segment04 = memory.add_segment(4)); DM(segment04);
         DO(auto segment11 = memory.add_segment(1)); DM(segment11);
         DO(memory.remove_segment(segment02));
+        DO(auto segment00 = memory.add_segment(0)); DM(segment00);
         DO(memory.remove_segment(segment11));
+        DO(memory.remove_segment(segment00));
         DO(memory.remove_segment(segment04));
     }
 }

@@ -5,7 +5,7 @@
 
 #include "MemoryManager.h"
 
-memory_manager_t& __memory_manager(); // only for test
+memory_manager_t& xxsemory_manager(); // only for test
 
 template <typename T>
 class segment_allocator_t
@@ -18,14 +18,14 @@ public:
     {
         return static_cast<T*>
         (
-            __memory_manager().add_segment(sizeof(T) * n)
+            xxmemory_manager().add_segment(sizeof(T) * n)
         );
     }
 
 public:
     void deallocate(T* ptr, std::size_t n)
     {
-        __memory_manager().remove_segment(ptr);
+        xxmemory_manager().remove_segment(ptr);
     }
 };
 

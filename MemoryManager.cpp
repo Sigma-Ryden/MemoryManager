@@ -16,9 +16,17 @@ segment_t* segment_t::next()
     );
 }
 
+segment_t* segment_t::segment(void* memory)
+{
+    return reinterpret_cast<segment_t*>
+    (
+        reinterpret_cast<char*>(memory) - sizeof(segment_t)
+    );
+}
+
 memory_manager_t::memory_manager_t(char* memory, std::size_t bytes)
-    : __begin(reinterpret_cast<segment_t*>(memory))
-    , __end(reinterpret_cast<segment_t*>(memory + bytes))
+    : xxbegin(reinterpret_cast<segment_t*>(memory))
+    , xxend(reinterpret_cast<segment_t*>(memory + bytes))
 {
     assert(bytes > sizeof(segment_t));
 
@@ -38,7 +46,7 @@ void* memory_manager_t::add_segment(std::size_t size)
 
         if (segment->size >= sizeof(segment_t) + size)
         {
-            auto diff = segment->size - size;
+            const auto diff = segment->size - size;
 
             segment->size = size;
             segment->is_used = true;
@@ -62,13 +70,41 @@ void* memory_manager_t::add_segment(std::size_t size)
     return nullptr;
 }
 
-static void extend_segment(segment_t* extendable, segment_t const* segment)
+bool memory_manager_t::extend_segment(void* address, std::size_t size)
 {
-    assert(extendable->next() == segment);
+    auto segment = segment_t::segment(address);
+    auto rhs = segment->next();
 
-    extendable->size += sizeof(segment_t) + segment->size;
-    extendable->is_used = false;
-    segment->~segment_t();
+    if (rhs == end() || rhs->is_used)
+    {
+        return false;
+    }
+
+    if (rhs->size >= size)
+    {
+        const auto diff = rhs->size - size;
+
+        segment->size += size;
+        rhs->~segment_t();
+        
+        auto created = new (segment->next()) segment_t;
+
+        created->size = diff;
+        created->is_used = false;
+
+        return true;
+    }
+    else if (rhs->size + sizeof(segment_t) == size)
+    {
+        segment->size += size;
+        rhs->~segment_t();
+
+        return true;
+    }
+    else
+    {
+        return false;
+    }
 }
 
 bool memory_manager_t::remove_segment(void* address)
@@ -85,14 +121,15 @@ bool memory_manager_t::remove_segment(void* address)
         auto rhs = segment->next();
 
         segment->is_used = false;
-
         if (rhs != end() && !rhs->is_used)
         {
-            extend_segment(segment, rhs);
+            segment->size += sizeof(segment_t) + rhs->size;
+            rhs->~segment_t();
         }
         if (lhs != end() && !lhs->is_used)
         {
-            extend_segment(lhs, segment);
+            lhs->size += sizeof(segment_t) + segment->size;
+            segment->~segment_t();
         }
 
         return true;
