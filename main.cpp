@@ -1,15 +1,11 @@
 #include <iostream>
 
+#include <new>
+
 #include "MemoryManager.h"
 
-memory_manager_t& xxmemory_manager()
-{
-    constexpr auto bytes = 1000;
-    static memory_manager_t manager(new char[bytes], bytes);
-    return manager;
-}
-
-memory_manager_t& memory = xxmemory_manager();
+static constexpr auto xxmemory_bytes = 1024*1024*8;
+static auto xxmemory = memory_manager_t(static_cast<char*>(std::malloc(xxmemory_bytes)), xxmemory_bytes);
 
 void stats(char const* text)
 {
@@ -22,7 +18,7 @@ void stats(char const* text)
     for (auto i = 0; i<border_length; ++i) std::cout << '-';
     std::cout << '\n';
 
-    for (auto segment = memory.begin(); segment != memory.end(); segment = segment->next())
+    for (auto segment = xxmemory.begin(); segment != xxmemory.end(); segment = segment->next())
     {
         std::cout << "segment: " << segment
                   << "\nmemory: " << segment->memory()
@@ -35,6 +31,31 @@ void stats(char const* text)
     std::cout << '\n';
 }
 
+void* operator new(std::size_t bytes)
+{
+    return xxmemory.add_segment(bytes); stats("void* operator new(std::size_t bytes)");
+}
+
+void* operator new[](std::size_t bytes)
+{
+    return xxmemory.add_segment(bytes); stats("void* operator new[](std::size_t bytes)");
+}
+
+void operator delete(void* pointer) noexcept
+{
+    xxmemory.remove_segment(pointer); stats("void operator delete(void* pointer) noexcept");
+}
+
+void operator delete(void* pointer, std::size_t bytes) noexcept
+{
+    xxmemory.remove_segment(pointer); stats("void operator delete(void* pointer, std::size_t bytes) noexcept");
+}
+
+void operator delete[](void* pointer) noexcept
+{
+    xxmemory.remove_segment(pointer); stats("void operator delete[](void* pointer) noexcept");
+}
+
 #define DO(...) __VA_ARGS__; stats(#__VA_ARGS__)
 #define DM(...) std::cout << #__VA_ARGS__ << ": " << static_cast<void*>(reinterpret_cast<char*>(__VA_ARGS__) - sizeof(segment_t)) << '\n'
 
@@ -42,28 +63,56 @@ void simple_test()
 {
     //if (false)
     {
-        DO((void)memory);
-        DO(auto segment01 = memory.add_segment(1)); DM(segment01);
-        DO(auto segment04 = memory.add_segment(4)); DM(segment04);
-        DO(auto segment02 = memory.add_segment(2)); DM(segment02);
+        DO((void)xxmemory);
+        DO(auto segment01 = xxmemory.add_segment(1)); DM(segment01);
+        DO(auto segment04 = xxmemory.add_segment(4)); DM(segment04);
+        DO(auto segment02 = xxmemory.add_segment(2)); DM(segment02);
         
-        DO(memory.remove_segment(segment01));
-        DO(memory.remove_segment(segment02));
-        DO(memory.remove_segment(segment04));
+        DO(xxmemory.remove_segment(segment01));
+        DO(xxmemory.remove_segment(segment02));
+        DO(xxmemory.remove_segment(segment04));
+    }
+    // else if (false)
+    {
+        DO((void)xxmemory);
+        DO(auto segment08 = xxmemory.add_segment(8)); DM(segment08);
+        DO(auto segment04 = xxmemory.add_segment(4)); DM(segment04);
+        DO(auto segment02 = xxmemory.add_segment(2)); DM(segment02);
+        DO(xxmemory.extend_segment(segment08, 2));
+        DO(xxmemory.remove_segment(segment04));
+        DO(xxmemory.extend_segment(segment08, 2));
+        if (false)
+        {
+            DO(xxmemory.extend_segment(segment08, 2));
+            DO(xxmemory.extend_segment(segment08, sizeof(segment_t)));
+        }
+        else if (true)
+        {
+
+            DO(xxmemory.extend_segment(segment08, sizeof(segment_t)));
+            DO(xxmemory.extend_segment(segment08, 2));
+        }
+        else
+        {
+            DO(xxmemory.extend_segment(segment08, sizeof(segment_t) + 2));
+        }
+        DO(xxmemory.extend_segment(segment02, 6));
+        DO(xxmemory.remove_segment(segment08));
+        DO(xxmemory.remove_segment(segment02));
     }
     //else
     {
-        DO((void)memory);
-        DO(auto segment01 = memory.add_segment(1)); DM(segment01);
-        DO(auto segment02 = memory.add_segment(2)); DM(segment02);
-        DO(memory.remove_segment(segment01));
-        DO(auto segment04 = memory.add_segment(4)); DM(segment04);
-        DO(auto segment11 = memory.add_segment(1)); DM(segment11);
-        DO(memory.remove_segment(segment02));
-        DO(auto segment00 = memory.add_segment(0)); DM(segment00);
-        DO(memory.remove_segment(segment11));
-        DO(memory.remove_segment(segment00));
-        DO(memory.remove_segment(segment04));
+        DO((void)xxmemory);
+        DO(auto segment01 = xxmemory.add_segment(1)); DM(segment01);
+        DO(auto segment02 = xxmemory.add_segment(2)); DM(segment02);
+        DO(xxmemory.remove_segment(segment01));
+        DO(auto segment04 = xxmemory.add_segment(4)); DM(segment04);
+        DO(auto segment11 = xxmemory.add_segment(1)); DM(segment11);
+        DO(xxmemory.remove_segment(segment02));
+        DO(auto segment00 = xxmemory.add_segment(0)); DM(segment00);
+        DO(xxmemory.remove_segment(segment11));
+        DO(xxmemory.remove_segment(segment00));
+        DO(xxmemory.remove_segment(segment04));
     }
 }
 
@@ -71,25 +120,17 @@ void simple_test()
 #include <string>
 #include <map>
 
-#include "SegmentAllocator.hpp"
-
 void stl_test()
 {
-    using string_allocator_t = segment_allocator_t<char>;
-    using string_t = std::basic_string<char, std::char_traits<char>, string_allocator_t>;
-
-    using map_allocator_t = segment_allocator_t<std::pair<string_t const, float>>;
-    using map_t = std::map<string_t, float, std::less<>, map_allocator_t>;
-    
     {
-        string_t str;
+        std::string str;
         DO((void)str);
         DO(str = "01020304050607080910111213141516171819202122232425");
     }
     DO((void)"~str");
 
     {
-        map_t map;
+        std::map<std::string, float> map;
         DO((void)map);
         DO(map["Tom"] = 21.5);
         DO(map["Ren"] = 22.3);
