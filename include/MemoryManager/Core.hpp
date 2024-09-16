@@ -1,5 +1,5 @@
-#ifndef MEMORY_MANAGER_HPP
-#define MEMORY_MANAGER_HPP
+#ifndef MEMORY_MANAGER_CORE_HPP
+#define MEMORY_MANAGER_CORE_HPP
 
 #include <cstddef> // size_t
 
@@ -33,4 +33,4 @@ private:
     segment_t* xxend = nullptr;
 };
 
-#endif // MEMORY_MANAGER_HPP
+#endif // MEMORY_MANAGER_CORE_HPP

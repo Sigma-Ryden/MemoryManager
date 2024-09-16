@@ -2,9 +2,9 @@
 
 #include <new>
 
-#include "MemoryManager.h"
+#include <MemoryManager/Core.hpp>
 
-static constexpr auto xxmemory_bytes = 1024*1024*8;
+static constexpr auto xxmemory_bytes = 1000;
 static auto xxmemory = memory_manager_t(static_cast<char*>(std::malloc(xxmemory_bytes)), xxmemory_bytes);
 
 void stats(char const* text)

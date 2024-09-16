@@ -1,4 +1,4 @@
-#include "MemoryManager.h"
+#include <MemoryManager/Core.hpp>
 
 #include <cassert> // assert
 #include <new> // placement new
